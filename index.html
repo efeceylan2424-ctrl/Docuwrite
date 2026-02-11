@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuWrite - Word Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --bg-tertiary: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #d1d5db;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #4b5563;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .toolbar {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 20px;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow);
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 2px;
+            padding-right: 8px;
+            margin-right: 8px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-btn {
+            padding: 6px 12px;
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toolbar-btn:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-color);
+        }
+
+        .toolbar-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        select.toolbar-btn {
+            padding: 4px 8px;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .page {
+            width: 816px;
+            min-height: 1056px;
+            background-color: var(--bg-primary);
+            padding: 96px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .editor {
+            outline: none;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: var(--text-primary);
+            min-height: 864px;
+        }
+
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .chatbot-toggle:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .chatbot-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background-color: var(--bg-primary);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbot-panel.open {
+            right: 0;
+        }
+
+        .chatbot-header {
+            padding: 16px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-chat {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .close-chat:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--accent-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.loading {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .chatbot-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        .chatbot-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chatbot-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .send-btn {
+            margin-top: 8px;
+            width: 100%;
+            padding: 10px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dark-mode-btn {
+            padding: 8px 16px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dark-mode-btn:hover {
+            background-color: var(--bg-primary);
+            transform: scale(1.02);
+        }
+
+        .download-btn {
+            padding: 8px 16px;
+            background-color: var(--accent-color);
+            color: white;
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .download-btn:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.02);
+        }
+
+        .donate-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+
+        .donate-popup.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .donate-content {
+            background-color: var(--bg-primary);
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .donate-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .donate-close:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .donate-content h2 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 24px;
+        }
+
+        .donate-content p {
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .paypal-btn {
+            width: 100%;
+            padding: 14px 24px;
+            background-color: #0070ba;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .paypal-btn:hover {
+            background-color: #005a94;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 112, 186, 0.3);
+        }
+
+        .skip-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 24px;
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .skip-btn:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--text-secondary);
+        }
+
+        .icon {
+            font-size: 18px;
+        }
+
+        .editor img {
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .editor img.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .resize-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .resize-modal.show {
+            display: flex;
+        }
+
+        .resize-content {
+            background-color: var(--bg-primary);
+            padding: 24px;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .resize-content h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .resize-input-group {
+            margin-bottom: 16px;
+        }
+
+        .resize-input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .resize-input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .resize-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .resize-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .apply-resize-btn {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .apply-resize-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .cancel-resize-btn {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .cancel-resize-btn:hover {
+            background-color: var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                width: 100%;
+                padding: 48px 24px;
+            }
+
+            .chatbot-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .toolbar {
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="header">
+        <div class="logo">
+            <span>📝</span>
+            <span>DocuWrite</span>
+        </div>
+        <button class="download-btn" onclick="downloadDocument()">
+            <span>⬇️</span>
+            <span>Download</span>
+        </button>
+        <div class="header-controls">
+            <button class="dark-mode-btn" onclick="toggleDarkMode()">
+                <span class="icon" id="darkModeIcon">☀️</span>
+                <span id="darkModeText">Light Mode</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <select class="toolbar-btn" onchange="formatDoc('fontName', this.value)">
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Calibri">Calibri</option>
+                <option value="Cambria">Cambria</option>
+                <option value="Garamond">Garamond</option>
+                <option value="Palatino">Palatino</option>
+                <option value="Book Antiqua">Book Antiqua</option>
+                <option value="Comic Sans MS">Comic Sans MS</option>
+                <option value="Impact">Impact</option>
+                <option value="Lucida Console">Lucida Console</option>
+                <option value="Tahoma">Tahoma</option>
+                <option value="Trebuchet MS">Trebuchet MS</option>
+            </select>
+            <select class="toolbar-btn" onchange="formatDoc('fontSize', this.value)">
+                <option value="1">8pt</option>
+                <option value="2">10pt</option>
+                <option value="3" selected>12pt</option>
+                <option value="4">14pt</option>
+                <option value="5">18pt</option>
+                <option value="6">24pt</option>
+                <option value="7">36pt</option>
+            </select>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold"><b>B</b></button>
+            <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic"><i>I</i></button>
+            <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline"><u>U</u></button>
+            <button class="toolbar-btn" onclick="formatDoc('strikeThrough')" title="Strikethrough"><s>S</s></button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left">≡</button>
+            <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center">≣</button>
+            <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right">≡</button>
+            <button class="toolbar-btn" onclick="formatDoc('justifyFull')" title="Justify">≣</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List">• List</button>
+            <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="Numbered List">1. List</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatDoc('undo')" title="Undo">↶</button>
+            <button class="toolbar-btn" onclick="formatDoc('redo')" title="Redo">↷</button>
+        </div>
+
+        <div class="toolbar-group">
+            <input type="color" class="toolbar-btn" onchange="formatDoc('foreColor', this.value)" title="Text Color" style="width: 40px; height: 32px;">
+            <input type="color" class="toolbar-btn" onchange="formatDoc('backColor', this.value)" title="Highlight" style="width: 40px; height: 32px;">
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="insertImage()" title="Insert Image">🖼️ Image</button>
+            <button class="toolbar-btn" onclick="resizeSelectedImage()" title="Resize Image">📐 Resize</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="editor-container">
+            <div class="page">
+                <div class="editor" contenteditable="true" id="editor">
+                    Start typing your document here...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="chatbot-toggle" onclick="toggleChatbot()">💬</button>
+
+    <!-- Image Resize Modal -->
+    <div class="resize-modal" id="resizeModal">
+        <div class="resize-content">
+            <h3>Resize Image</h3>
+            <div class="resize-input-group">
+                <label>Width (px)</label>
+                <input type="number" id="imageWidth" placeholder="Width in pixels">
+            </div>
+            <div class="resize-input-group">
+                <label>Height (px)</label>
+                <input type="number" id="imageHeight" placeholder="Height in pixels">
+            </div>
+            <div class="resize-buttons">
+                <button class="cancel-resize-btn" onclick="closeResizeModal()">Cancel</button>
+                <button class="apply-resize-btn" onclick="applyResize()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="chatbot-panel" id="chatbotPanel">
+        <div class="chatbot-header">
+            <h3>AI Writing Assistant</h3>
+            <button class="close-chat" onclick="toggleChatbot()">×</button>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <div class="message assistant">
+                Hi! I'm your AI writing assistant. I can help you with:
+                <br><br>
+                • Improving your writing<br>
+                • Grammar and spelling<br>
+                • Formatting suggestions<br>
+                • Content ideas<br>
+                • Document structure<br>
+                <br>
+                How can I help you today?
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <textarea class="chatbot-input" id="chatInput" placeholder="Ask me anything..." rows="3"></textarea>
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">Send Message</button>
+        </div>
+    </div>
+
+    <div class="donate-popup" id="donatePopup">
+        <div class="donate-content">
+            <button class="donate-close" onclick="closeDonatePopup()">×</button>
+            <h2>💝 Support DocuWrite</h2>
+            <p>If you're enjoying DocuWrite and find it useful, please consider supporting its development. Your donation helps keep this tool free and continuously improving!</p>
+            <form action="https://www.paypal.com/donate" method="post" target="_blank" id="donateForm">
+                <input type="hidden" name="business" id="paypalEmail" value="efe.cey123123@gmail.com">
+                <input type="hidden" name="item_name" value="DocuWrite Support">
+                <input type="hidden" name="currency_code" value="USD">
+                <button type="submit" class="paypal-btn">
+                    <span>💳</span>
+                    <span>Donate via PayPal</span>
+                </button>
+            </form>
+            <button class="skip-btn" onclick="closeDonatePopup()">Maybe Later</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - REPLACE WITH YOUR PAYPAL EMAIL
+        const PAYPAL_EMAIL = 'efe.cey123123@gmail.com'; // ← Change this to your PayPal email
+        document.getElementById('paypalEmail').value = PAYPAL_EMAIL;
+
+        // Download functionality
+        function downloadDocument() {
+            const editor = document.getElementById('editor');
+            const content = editor.innerHTML;
+            
+            // Create HTML document structure
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 816px;
+            margin: 40px auto;
+            padding: 96px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
+
+            // Create blob and download
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'document.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Show donate popup after download
+            showDonatePopup();
+        }
+
+        // Donate popup functionality
+        let donateShownCount = 0;
+        
+        function showDonatePopup() {
+            donateShownCount++;
+            if (donateShownCount <= 3) { // Show popup max 3 times
+                document.getElementById('donatePopup').classList.add('show');
+            }
+        }
+
+        function closeDonatePopup() {
+            document.getElementById('donatePopup').classList.remove('show');
+        }
+
+        // Close popup when clicking outside
+        document.getElementById('donatePopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDonatePopup();
+            }
+        });
+
+        // Image insertion and resizing
+        let selectedImage = null;
+
+        function insertImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.style.maxWidth = '100%';
+                        img.onclick = function() {
+                            // Deselect all images
+                            document.querySelectorAll('.editor img').forEach(i => i.classList.remove('selected'));
+                            // Select this image
+                            this.classList.add('selected');
+                            selectedImage = this;
+                        };
+                        
+                        const editor = document.getElementById('editor');
+                        const selection = window.getSelection();
+                        if (selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0);
+                            range.deleteContents();
+                            range.insertNode(img);
+                        } else {
+                            editor.appendChild(img);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        function resizeSelectedImage() {
+            if (!selectedImage) {
+                alert('Please select an image first by clicking on it');
+                return;
+            }
+            document.getElementById('imageWidth').value = selectedImage.width || '';
+            document.getElementById('imageHeight').value = selectedImage.height || '';
+            document.getElementById('resizeModal').classList.add('show');
+        }
+
+        function closeResizeModal() {
+            document.getElementById('resizeModal').classList.remove('show');
+        }
+
+        function applyResize() {
+            const width = document.getElementById('imageWidth').value;
+            const height = document.getElementById('imageHeight').value;
+            
+            if (selectedImage) {
+                if (width) selectedImage.style.width = width + 'px';
+                if (height) selectedImage.style.height = height + 'px';
+                closeResizeModal();
+            }
+        }
+
+        // Dark mode functionality
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('darkModeIcon').textContent = isDark ? '☀️' : '🌙';
+            document.getElementById('darkModeText').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+
+        // Text formatting
+        function formatDoc(cmd, value = null) {
+            document.execCommand(cmd, false, value);
+            document.getElementById('editor').focus();
+        }
+
+        // Chatbot functionality
+        let conversationHistory = [];
+
+        function toggleChatbot() {
+            document.getElementById('chatbotPanel').classList.toggle('open');
+        }
+
+        function addMessage(content, isUser) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addLoadingMessage() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message loading';
+            messageDiv.id = 'loadingMessage';
+            messageDiv.textContent = 'Thinking...';
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeLoadingMessage() {
+            const loadingMsg = document.getElementById('loadingMessage');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            sendBtn.disabled = true;
+            addLoadingMessage();
+
+            // Get current document content for context
+            const editorContent = document.getElementById('editor').textContent;
+            const contextMessage = editorContent.length > 100 
+                ? `Current document excerpt: "${editorContent.substring(0, 500)}..."` 
+                : editorContent.length > 0 
+                ? `Current document: "${editorContent}"` 
+                : '';
+
+            // Prepare conversation
+            conversationHistory.push({
+                role: 'user',
+                content: contextMessage ? `${message}\n\n${contextMessage}` : message
+            });
+
+            try {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1000,
+                        system: 'You are a helpful writing assistant embedded in a word processor. Help users with their writing tasks, including improving text, fixing grammar, suggesting content, formatting advice, and answering questions about their documents. Be concise and practical.',
+                        messages: conversationHistory
+                    })
+                });
+
+                const data = await response.json();
+                removeLoadingMessage();
+
+                if (data.content && data.content[0]) {
+                    const assistantMessage = data.content[0].text;
+                    addMessage(assistantMessage, false);
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: assistantMessage
+                    });
+                } else {
+                    addMessage('Sorry, I encountered an error. Please try again.', false);
+                }
+            } catch (error) {
+                removeLoadingMessage();
+                addMessage('Sorry, I encountered an error connecting to the AI service. Please try again.', false);
+                console.error('Error:', error);
+            }
+
+            sendBtn.disabled = false;
+        }
+
+        // Allow Enter to send (Shift+Enter for new line)
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-save to localStorage
+        const editor = document.getElementById('editor');
+        editor.addEventListener('input', function() {
+            localStorage.setItem('documentContent', editor.innerHTML);
+        });
+
+        // Load saved content
+        const savedContent = localStorage.getItem('documentContent');
+        if (savedContent) {
+            editor.innerHTML = savedContent;
+        }
+    </script>
+</body>
+</html>
